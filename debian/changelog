@@ -1,3 +1,10 @@
+libdrm (2.4.95-1~bpo9+1sr1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * add patch for DRM_CAS on arm
+
+ -- Josua Mayer <josua@solid-run.com>  Sun, 25 Nov 2018 22:12:35 +0100
+
 libdrm (2.4.95-1~bpo9+1) stretch-backports; urgency=medium
 
   * Rebuild for stretch-backports.
