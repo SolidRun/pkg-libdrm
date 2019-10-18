@@ -1,3 +1,9 @@
+libdrm (2.4.97-1+sr1) buster; urgency=medium
+
+  * add arm version of DRM_CAS
+
+ -- Josua Mayer <josua@solid-run.com>  Fri, 18 Oct 2019 14:26:30 +0200
+
 libdrm (2.4.97-1) unstable; urgency=medium
 
   [ Andreas Boll ]
