@@ -226,3 +226,17 @@ Description: Userspace interface to etnaviv-specific kernel DRM services -- runt
  kernelspace portion of the "Direct Rendering Infrastructure" (DRI).
  The DRI is currently used on Linux to provide hardware-accelerated
  OpenGL drivers.
+
+Package: libdrm-vivante1
+Architecture: armhf arm64
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+Pre-Depends: ${misc:Pre-Depends}
+Multi-Arch: same
+Description: Userspace interface to vivante-specific kernel DRM services -- runtime
+ This library implements the userspace interface to the kernel DRM
+ services.  DRM stands for "Direct Rendering Manager", which is the
+ kernelspace portion of the "Direct Rendering Infrastructure" (DRI).
+ The DRI is currently used on Linux to provide hardware-accelerated
+ OpenGL drivers.
