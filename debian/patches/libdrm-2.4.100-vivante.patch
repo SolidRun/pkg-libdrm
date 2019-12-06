@@ -1,0 +1,2608 @@
+--- /dev/null
++++ b/Android.bp
+@@ -0,0 +1,44 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++subdirs = ["vivante/*"]
++build = ["Android.sources.bp"]
++
++cc_defaults {
++    name: "libdrm_android_defaults",
++    cflags: [
++        "-DMAJOR_IN_SYSMACROS=1",
++        "-DHAVE_VISIBILITY=1",
++        "-fvisibility=hidden",
++        "-DHAVE_LIBDRM_ATOMIC_PRIMITIVES=1",
++
++        "-Wno-error",
++        "-Wno-unused-parameter",
++        "-Wno-missing-field-initializers",
++        "-Wno-pointer-arith",
++        "-Wno-enum-conversion",
++    ],
++    export_include_dirs: ["."],
++}
++
++cc_library {
++    name: "libdrm_android",
++    vendor: true,
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_sources",
++    ],
++    shared_libs: ["libcutils",],
++    export_include_dirs: ["include/drm", "android"],
++}
+--- a/Android.mk
++++ /dev/null
+@@ -1,74 +0,0 @@
+-#
+-# Copyright © 2011-2012 Intel Corporation
+-#
+-# Permission is hereby granted, free of charge, to any person obtaining a
+-# copy of this software and associated documentation files (the "Software"),
+-# to deal in the Software without restriction, including without limitation
+-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+-# and/or sell copies of the Software, and to permit persons to whom the
+-# Software is furnished to do so, subject to the following conditions:
+-#
+-# The above copyright notice and this permission notice (including the next
+-# paragraph) shall be included in all copies or substantial portions of the
+-# Software.
+-#
+-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+-# IN THE SOFTWARE.
+-#
+-
+-LIBDRM_ANDROID_MAJOR_VERSION := $(word 1, $(subst ., , $(PLATFORM_VERSION)))
+-ifneq ($(filter 2 4, $(LIBDRM_ANDROID_MAJOR_VERSION)),)
+-$(error "Android 4.4 and earlier not supported")
+-endif
+-
+-LIBDRM_COMMON_MK := $(call my-dir)/Android.common.mk
+-
+-LOCAL_PATH := $(call my-dir)
+-LIBDRM_TOP := $(LOCAL_PATH)
+-
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_{,H,INCLUDE_H,INCLUDE_ANDROID_H,INCLUDE_VMWGFX_H}_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-#static library for the device (recovery)
+-include $(CLEAR_VARS)
+-LOCAL_MODULE := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_FILES)
+-LOCAL_EXPORT_C_INCLUDE_DIRS := \
+-	$(LOCAL_PATH) \
+-	$(LOCAL_PATH)/include/drm \
+-	$(LOCAL_PATH)/android
+-
+-LOCAL_C_INCLUDES := \
+-	$(LOCAL_PATH)/include/drm
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_STATIC_LIBRARY)
+-
+-# Shared library for the device
+-include $(CLEAR_VARS)
+-LOCAL_MODULE := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_FILES)
+-LOCAL_EXPORT_C_INCLUDE_DIRS := \
+-	$(LOCAL_PATH) \
+-	$(LOCAL_PATH)/include/drm \
+-	$(LOCAL_PATH)/android
+-
+-LOCAL_SHARED_LIBRARIES := \
+-	libcutils
+-
+-LOCAL_C_INCLUDES := \
+-        $(LOCAL_PATH)/include/drm
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+-
+-include $(call all-makefiles-under,$(LOCAL_PATH))
+--- /dev/null
++++ b/Android.sources.bp
+@@ -0,0 +1,24 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_sources",
++    srcs: [
++        "xf86drm.c",
++        "xf86drmHash.c",
++        "xf86drmRandom.c",
++        "xf86drmSL.c",
++        "xf86drmMode.c",
++    ],
++}
+--- /dev/null
++++ b/COPYING
+@@ -0,0 +1,15 @@
++ Permission is hereby granted, free of charge, to any person obtaining a
++ copy of this software and associated documentation files (the
++ "Software"), to deal in the Software without restriction, including
++ without limitation the rights to use, copy, modify, merge, publish,
++ distribute, sub license, and/or sell copies of the Software, and to
++ permit persons to whom the Software is furnished to do so, subject to
++ the following conditions:
++
++ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
++ THE COPYRIGHT HOLDERS, AUTHORS AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM,
++ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
++ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
++ USE OR OTHER DEALINGS IN THE SOFTWARE.
+--- a/Makefile.sources
++++ b/Makefile.sources
+@@ -35,6 +35,7 @@
+ 	include/drm/sis_drm.h \
+ 	include/drm/tegra_drm.h \
+ 	include/drm/vc4_drm.h \
++	include/drm/vivante_drm.h \
+ 	include/drm/via_drm.h \
+ 	include/drm/virtgpu_drm.h
+ 
+--- /dev/null
++++ b/amdgpu/Android.bp
+@@ -0,0 +1,29 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_amdgpu",
++    cflags: [
++	"-DAMDGPU_ASIC_ID_TABLE=\"/vendor/etc/hwdata/amdgpu.ids\""
++    ],
++    required: ["amdgpu.ids_android",],
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_amdgpu_sources",
++    ],
++    vendor: true,
++    shared_libs: ["libdrm_android"],
++}
+--- a/amdgpu/Android.mk
++++ /dev/null
+@@ -1,19 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_AMDGPU_FILES, LIBDRM_AMDGPU_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_amdgpu
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_AMDGPU_FILES)
+-
+-LOCAL_CFLAGS := \
+-	-DAMDGPU_ASIC_ID_TABLE=\"/vendor/etc/hwdata/amdgpu.ids\"
+-
+-LOCAL_REQUIRED_MODULES := amdgpu.ids
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/amdgpu/Android.sources.bp
+@@ -0,0 +1,27 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_amdgpu_sources",
++    srcs: [
++	    "amdgpu_asic_id.c",
++        "amdgpu_bo.c",
++        "amdgpu_cs.c",
++        "amdgpu_device.c",
++        "amdgpu_gpu_info.c",
++        "amdgpu_vamgr.c",
++	    "amdgpu_vm.c",
++        "handle_table.c",
++    ],
++}
+--- a/data/Android.mk
++++ b/data/Android.mk
+@@ -1,7 +1,7 @@
+ LOCAL_PATH := $(call my-dir)
+ 
+ include $(CLEAR_VARS)
+-LOCAL_MODULE := amdgpu.ids
++LOCAL_MODULE := amdgpu.ids_android
+ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE_CLASS := ETC
+ LOCAL_PROPRIETARY_MODULE := true
+--- /dev/null
++++ b/etnaviv/Android.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_etnaviv",
++    vendor: true,
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_etnaviv_sources",
++    ],
++    shared_libs: ["libdrm_android"],
++}
+--- a/etnaviv/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_ETNAVIV_FILES, LIBDRM_ETNAVIV_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_etnaviv
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_ETNAVIV_FILES)
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/etnaviv/Android.sources.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_etnaviv_sources",
++    srcs: [
++        "etnaviv_device.c",
++        "etnaviv_gpu.c",
++        "etnaviv_bo.c",
++        "etnaviv_bo_cache.c",
++        "etnaviv_pipe.c",
++        "etnaviv_cmd_stream.c",
++    ],
++}
+--- /dev/null
++++ b/freedreno/Android.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_freedreno",
++    vendor: true,
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_freedreno_sources",
++    ],
++    shared_libs: ["libdrm_android"],
++}
+--- a/freedreno/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_FREEDRENO_FILES, LIBDRM_FREEDRENO_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_freedreno
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_FREEDRENO_FILES)
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/freedreno/Android.sources.bp
+@@ -0,0 +1,28 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_freedreno_sources",
++    srcs: [
++        "freedreno_device.c",
++        "freedreno_pipe.c",
++        "freedreno_ringbuffer.c",
++        "freedreno_bo.c",
++        "freedreno_bo_cache.c",
++        "msm/msm_bo.c",
++        "msm/msm_device.c",
++        "msm/msm_pipe.c",
++        "msm/msm_ringbuffer.c",
++    ],
++}
+--- a/include/drm/drm_fourcc.h
++++ b/include/drm/drm_fourcc.h
+@@ -91,6 +91,10 @@
+ #define DRM_FORMAT_RG1616	fourcc_code('R', 'G', '3', '2') /* [31:0] R:G 16:16 little endian */
+ #define DRM_FORMAT_GR1616	fourcc_code('G', 'R', '3', '2') /* [31:0] G:R 16:16 little endian */
+ 
++/* 32 bpp RG */
++#define DRM_FORMAT_RG1616	fourcc_code('R', 'G', '3', '2') /* [31:0] R:G 16:16 little endian */
++#define DRM_FORMAT_GR1616	fourcc_code('G', 'R', '3', '2') /* [31:0] G:R 16:16 little endian */
++
+ /* 8 bpp RGB */
+ #define DRM_FORMAT_RGB332	fourcc_code('R', 'G', 'B', '8') /* [7:0] R:G:B 3:3:2 */
+ #define DRM_FORMAT_BGR233	fourcc_code('B', 'G', 'R', '8') /* [7:0] B:G:R 2:3:3 */
+@@ -236,6 +240,7 @@
+ #define DRM_FORMAT_NV61		fourcc_code('N', 'V', '6', '1') /* 2x1 subsampled Cb:Cr plane */
+ #define DRM_FORMAT_NV24		fourcc_code('N', 'V', '2', '4') /* non-subsampled Cr:Cb plane */
+ #define DRM_FORMAT_NV42		fourcc_code('N', 'V', '4', '2') /* non-subsampled Cb:Cr plane */
++#define DRM_FORMAT_P010		fourcc_code('P', '0', '1', '0') /* 2x2 subsampled Cr:Cb plane, 10-bit per channel */
+ 
+ /*
+  * 2 plane YCbCr MSB aligned
+@@ -309,6 +314,8 @@
+ #define DRM_FORMAT_MOD_VENDOR_BROADCOM 0x07
+ #define DRM_FORMAT_MOD_VENDOR_ARM     0x08
+ #define DRM_FORMAT_MOD_VENDOR_ALLWINNER 0x09
++#define DRM_FORMAT_MOD_VENDOR_AMPHION  0xf0
++#define DRM_FORMAT_MOD_VENDOR_VSI      0xf1
+ 
+ /* add more to the end as needed */
+ 
+@@ -487,9 +494,30 @@
+  */
+ #define DRM_FORMAT_MOD_VIVANTE_SPLIT_SUPER_TILED fourcc_mod_code(VIVANTE, 4)
+ 
++/*
++ * Vivante 64x64 super-tiling with compression layout
++ *
++ * This is a tiled layout using 64x64 pixel super-tiles, where each super-tile
++ * contains 8x4 groups of 2x4 tiles of 4x4 pixels each, all in row-major layout
++ * with compression.
++ */
++#define DRM_FORMAT_MOD_VIVANTE_SUPER_TILED_FC  fourcc_mod_code(VIVANTE, 5)
++
+ /* NVIDIA frame buffer modifiers */
+ 
+ /*
++ * Some modifiers take parameters, for example the number of vertical GOBs in
++ * a block. Reserve the lower 32 bits for parameters
++ */
++#define __fourcc_mod_tegra_mode_shift 32
++#define fourcc_mod_tegra_code(val, params) \
++	fourcc_mod_code(NV, ((((__u64)val) << __fourcc_mod_tegra_mode_shift) | params))
++#define fourcc_mod_tegra_mod(m) \
++	(m & ~((1ULL << __fourcc_mod_tegra_mode_shift) - 1))
++#define fourcc_mod_tegra_param(m) \
++	(m & ((1ULL << __fourcc_mod_tegra_mode_shift) - 1))
++
++/*
+  * Tegra Tiled Layout, used by Tegra 2, 3 and 4.
+  *
+  * Pixels are arranged in simple tiles of 16 x 16 bytes.
+@@ -756,6 +784,42 @@
+  */
+ #define DRM_FORMAT_MOD_ALLWINNER_TILED fourcc_mod_code(ALLWINNER, 1)
+ 
++/* Amphion tiled layout */
++
++/*
++ * Amphion 8x128 tiling layout
++ *
++ * This is a tiled layout using 8x128 pixel vertical strips, where each strip
++ * contains 1x16 groups of 8x8 pixels in a row-major layout.
++ */
++#define DRM_FORMAT_MOD_AMPHION_TILED fourcc_mod_code(AMPHION, 1)
++
++/* Verisilicon framebuffer modifiers */
++
++/*
++ * Verisilicon 8x4 tiling layout
++ *
++ * This is G1 VPU tiled layout using tiles of 8x4 pixels in a row-major
++ * layout.
++ */
++#define DRM_FORMAT_MOD_VSI_G1_TILED fourcc_mod_code(VSI, 1)
++
++/*
++ * Verisilicon 4x4 tiling layout
++ *
++ * This is G2 VPU tiled layout using tiles of 4x4 pixels in a row-major
++ * layout.
++ */
++#define DRM_FORMAT_MOD_VSI_G2_TILED fourcc_mod_code(VSI, 2)
++
++/*
++ * Verisilicon 4x4 tiling with compression layout
++ *
++ * This is G2 VPU tiled layout using tiles of 4x4 pixels in a row-major
++ * layout with compression.
++ */
++#define DRM_FORMAT_MOD_VSI_G2_TILED_COMPRESSED fourcc_mod_code(VSI, 3)
++
+ #if defined(__cplusplus)
+ }
+ #endif
+--- a/include/drm/drm_mode.h
++++ b/include/drm/drm_mode.h
+@@ -630,6 +630,27 @@
+ 	__u16 reserved;
+ };
+ 
++enum supported_eotf_type {
++	TRADITIONAL_GAMMA_SDR = 0,
++	TRADITIONA_GAMMA_HDR,
++	SMPTE_ST2084,
++	FUTURE_EOTF
++};
++
++/* HDR Metadata */
++struct hdr_static_metadata {
++	__u8 eotf;
++	__u8 type;
++	__u16 display_primaries_x[3];
++	__u16 display_primaries_y[3];
++	__u16 white_point_x;
++	__u16 white_point_y;
++	__u16 max_mastering_display_luminance;
++	__u16 min_mastering_display_luminance;
++	__u16 max_fall;
++	__u16 max_cll;
++};
++
+ #define DRM_MODE_PAGE_FLIP_EVENT 0x01
+ #define DRM_MODE_PAGE_FLIP_ASYNC 0x02
+ #define DRM_MODE_PAGE_FLIP_TARGET_ABSOLUTE 0x4
+--- /dev/null
++++ b/include/drm/imx_drm.h
+@@ -0,0 +1,66 @@
++/****************************************************************************
++ ****************************************************************************
++ ***
++ ***   This header was automatically generated from a Linux kernel header
++ ***   of the same name, to make information necessary for userspace to
++ ***   call into the kernel available to libc.  It contains only constants,
++ ***   structures, and macros generated from the original header, and thus,
++ ***   contains no copyrightable information.
++ ***
++ ***   To edit the content of this header, modify the corresponding
++ ***   source file (e.g. under external/kernel-headers/original/) then
++ ***   run bionic/libc/kernel/tools/update_all.py
++ ***
++ ***   Any manual change here will be lost the next time this script will
++ ***   be run. You've been warned!
++ ***
++ ****************************************************************************
++ ****************************************************************************/
++#ifndef _UAPI_IMX_DRM_H_
++#define _UAPI_IMX_DRM_H_
++#include "drm.h"
++#ifdef __cplusplus
++extern "C" {
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++#endif
++struct drm_imx_dpu_frame_info {
++  __u32 width;
++  __u32 height;
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++  __u32 x_offset;
++  __u32 y_offset;
++  __u32 stride;
++  __u32 format;
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++  __u64 modifier;
++  __u64 baddr;
++  __u64 uv_addr;
++};
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++#define DRM_IMX_DPU_SET_CMDLIST 0x00
++#define DRM_IMX_DPU_WAIT 0x01
++#define DRM_IMX_DPU_GET_PARAM 0x02
++#define DRM_IOCTL_IMX_DPU_SET_CMDLIST DRM_IOWR(DRM_COMMAND_BASE + DRM_IMX_DPU_SET_CMDLIST, struct drm_imx_dpu_set_cmdlist)
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++#define DRM_IOCTL_IMX_DPU_WAIT DRM_IOWR(DRM_COMMAND_BASE + DRM_IMX_DPU_WAIT, struct drm_imx_dpu_wait)
++#define DRM_IOCTL_IMX_DPU_GET_PARAM DRM_IOWR(DRM_COMMAND_BASE + DRM_IMX_DPU_GET_PARAM, enum drm_imx_dpu_param)
++struct drm_imx_dpu_set_cmdlist {
++  __u64 cmd;
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++  __u32 cmd_nr;
++  __u64 user_data;
++};
++struct drm_imx_dpu_wait {
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++  __u64 user_data;
++};
++enum drm_imx_dpu_param {
++  DRM_IMX_MAX_DPUS,
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++};
++#ifdef __cplusplus
++}
++#endif
++#endif
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++
+--- /dev/null
++++ b/include/drm/vivante_drm.h
+@@ -0,0 +1,171 @@
++/****************************************************************************
++*
++*    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++*    All Rights Reserved.
++*
++*    Permission is hereby granted, free of charge, to any person obtaining
++*    a copy of this software and associated documentation files (the
++*    'Software'), to deal in the Software without restriction, including
++*    without limitation the rights to use, copy, modify, merge, publish,
++*    distribute, sub license, and/or sell copies of the Software, and to
++*    permit persons to whom the Software is furnished to do so, subject
++*    to the following conditions:
++*
++*    The above copyright notice and this permission notice (including the
++*    next paragraph) shall be included in all copies or substantial
++*    portions of the Software.
++*
++*    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++*    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++*    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++*    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++*    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++*    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++*    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++*
++*****************************************************************************/
++
++
++#ifndef __VIVNATE_DRM_H__
++#define __VIVNATE_DRM_H__
++
++#include <drm.h>
++
++#if defined(__cplusplus)
++extern "C" {
++#endif
++
++/* creation flag bits. */
++#define DRM_VIV_GEM_CONTIGUOUS      (1u << 0)
++#define DRM_VIV_GEM_CACHED          (1u << 1)
++#define DRM_VIV_GEM_SECURE          (1u << 2)
++#define DRM_VIV_GEM_CMA_LIMIT       (1u << 3)
++#define DRM_VIV_GEM_VIRTUAL_POOL    (1u << 4)
++
++struct drm_viv_gem_create {
++    __u64 size;
++    __u32 flags;
++    __u32 handle;
++};
++
++struct drm_viv_gem_lock {
++    __u32 handle;
++    __u32 cacheable;
++    __u64 logical;
++};
++
++struct drm_viv_gem_unlock {
++    __u32 handle;
++};
++
++
++#define DRM_VIV_GEM_CLEAN_CACHE         0x01
++#define DRM_VIV_GEM_INVALIDATE_CACHE    0x02
++#define DRM_VIV_GEM_FLUSH_CACHE         0x03
++#define DRM_VIV_GEM_MEMORY_BARRIER      0x04
++
++struct drm_viv_gem_cache {
++    __u32 handle;
++    __u32 op;
++    __u64 logical;
++    __u64 bytes;
++};
++
++
++#define DRM_VIV_GEM_PARAM_POOL      0x00
++#define DRM_VIV_GEM_PARAM_SIZE      0x01
++
++struct drm_viv_gem_query {
++    __u32 handle;
++    __u32 param;
++    __u64 value;
++};
++
++
++struct drm_viv_gem_timestamp {
++    __u32 handle;
++    /* inc count, 0 for query current. */
++    __u32 inc;
++    /* output inc'ed timestamp. */
++    __u64 timestamp;
++};
++
++
++/* basic tiling mode. */
++#define DRM_VIV_GEM_TILING_LINEAR       0x01
++#define DRM_VIV_GEM_TILING_TILED        0x02
++#define DRM_VIV_GEM_TILING_SUPERTILED   0x04
++#define DRM_VIV_GEM_TILING_MINORTILED   0x08
++
++/* tiling mode modifiers. */
++#define DRM_VIV_GEM_TILING_SPLIT    0x10
++#define DRM_VIV_GEM_TILING_X_MAJOR  0x20
++#define DRM_VIV_GEM_TILING_Y_MAJOR  0x40
++#define DRM_VIV_GEM_TILING_SWAP     0x80
++
++/* ts mode. */
++#define DRM_VIV_GEM_TS_NONE         0x00
++#define DRM_VIV_GEM_TS_DISABLED     0x01
++#define DRM_VIV_GEM_TS_NORMAL       0x02
++#define DRM_VIV_GEM_TS_COMPRESSED   0x03
++
++struct drm_viv_gem_set_tiling {
++    __u32 handle;
++    __u32 tiling_mode;
++
++    __u32 ts_mode;
++    __u64 clear_value;
++};
++
++struct drm_viv_gem_get_tiling {
++    __u32 handle;
++    __u32 tiling_mode;
++
++    __u32 ts_mode;
++    __u64 clear_value;
++};
++
++
++struct drm_viv_gem_attach_aux {
++    __u32 handle;
++    __u32 ts_handle;
++};
++
++
++struct drm_viv_gem_ref_node {
++    __u32 handle;
++
++    /* output. */
++    __u32 node;
++    __u32 ts_node;
++};
++
++
++#define DRM_VIV_GEM_CREATE          0x00
++#define DRM_VIV_GEM_LOCK            0x01
++#define DRM_VIV_GEM_UNLOCK          0x02
++#define DRM_VIV_GEM_CACHE           0x03
++#define DRM_VIV_GEM_QUERY           0x04
++#define DRM_VIV_GEM_TIMESTAMP       0x05
++#define DRM_VIV_GEM_SET_TILING      0x06
++#define DRM_VIV_GEM_GET_TILING      0x07
++#define DRM_VIV_GEM_ATTACH_AUX      0x08
++#define DRM_VIV_GEM_REF_NODE        0x09
++#define DRM_VIV_NUM_IOCTLS          0x0A
++
++#define DRM_IOCTL_VIV_GEM_CREATE        DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_CREATE,     struct drm_viv_gem_create)
++#define DRM_IOCTL_VIV_GEM_LOCK          DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_LOCK,       struct drm_viv_gem_lock)
++#define DRM_IOCTL_VIV_GEM_UNLOCK        DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_UNLOCK,     struct drm_viv_gem_unlock)
++#define DRM_IOCTL_VIV_GEM_CACHE         DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_CACHE,      struct drm_viv_gem_cache)
++#define DRM_IOCTL_VIV_GEM_QUERY         DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_QUERY,      struct drm_viv_gem_query)
++#define DRM_IOCTL_VIV_GEM_TIMESTAMP     DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_TIMESTAMP,  struct drm_viv_gem_timestamp)
++#define DRM_IOCTL_VIV_GEM_SET_TILING    DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_SET_TILING, struct drm_viv_gem_set_tiling)
++#define DRM_IOCTL_VIV_GEM_GET_TILING    DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_GET_TILING, struct drm_viv_gem_get_tiling)
++#define DRM_IOCTL_VIV_GEM_ATTACH_AUX    DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_ATTACH_AUX, struct drm_viv_gem_attach_aux)
++#define DRM_IOCTL_VIV_GEM_REF_NODE      DRM_IOWR(DRM_COMMAND_BASE + DRM_VIV_GEM_REF_NODE,   struct drm_viv_gem_ref_node)
++
++#if defined(__cplusplus)
++}
++#endif
++
++#endif /* __VIVNATE_DRM_H__ */
+--- /dev/null
++++ b/intel/Android.bp
+@@ -0,0 +1,26 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_intel",
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_intel_sources",
++    ],
++    srcs: ["intel_chipset.c"],
++    vendor: true,
++    shared_libs: ["libdrm_android"],
++}
+--- a/intel/Android.mk
++++ /dev/null
+@@ -1,38 +0,0 @@
+-#
+-# Copyright © 2011 Intel Corporation
+-#
+-# Permission is hereby granted, free of charge, to any person obtaining a
+-# copy of this software and associated documentation files (the "Software"),
+-# to deal in the Software without restriction, including without limitation
+-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+-# and/or sell copies of the Software, and to permit persons to whom the
+-# Software is furnished to do so, subject to the following conditions:
+-#
+-# The above copyright notice and this permission notice (including the next
+-# paragraph) shall be included in all copies or substantial portions of the
+-# Software.
+-#
+-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+-# IN THE SOFTWARE.
+-#
+-
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_INTEL_FILES, LIBDRM_INTEL_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_intel
+-
+-LOCAL_SRC_FILES := $(LIBDRM_INTEL_FILES)
+-
+-LOCAL_SHARED_LIBRARIES := \
+-	libdrm
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/intel/Android.sources.bp
+@@ -0,0 +1,24 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_intel_sources",
++    srcs: [
++        "intel_bufmgr.c",
++        "intel_bufmgr_fake.c",
++        "intel_bufmgr_gem.c",
++        "intel_decode.c",
++        "mm.c",
++    ],
++}
+--- /dev/null
++++ b/libkms/Android.bp
+@@ -0,0 +1,29 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libkms_android",
++    vendor: true,
++    defaults: [
++        "libdrm_android_defaults",
++        "libkms_android_sources",
++        "libkms_android_vmwgfx_sources",
++        "libkms_android_intel_sources",
++        "libkms_android_nouveau_sources",
++        "libkms_android_radeon_sources",
++    ],
++    shared_libs: ["libdrm_android"],
++}
+--- a/libkms/Android.mk
++++ /dev/null
+@@ -1,51 +0,0 @@
+-DRM_GPU_DRIVERS := $(strip $(filter-out swrast, $(BOARD_GPU_DRIVERS)))
+-
+-intel_drivers := i915 i965 i915g iris
+-radeon_drivers := r300g r600g radeonsi
+-nouveau_drivers := nouveau
+-virgl_drivers := virgl
+-vmwgfx_drivers := vmwgfx
+-
+-valid_drivers := \
+-	$(intel_drivers) \
+-	$(radeon_drivers) \
+-	$(nouveau_drivers) \
+-	$(virgl_drivers) \
+-	$(vmwgfx_drivers)
+-
+-# warn about invalid drivers
+-invalid_drivers := $(filter-out $(valid_drivers), $(DRM_GPU_DRIVERS))
+-ifneq ($(invalid_drivers),)
+-$(warning invalid GPU drivers: $(invalid_drivers))
+-# tidy up
+-DRM_GPU_DRIVERS := $(filter-out $(invalid_drivers), $(DRM_GPU_DRIVERS))
+-endif
+-
+-LOCAL_PATH := $(call my-dir)
+-
+-include $(CLEAR_VARS)
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_SRC_FILES := $(LIBKMS_FILES)
+-
+-ifneq ($(filter $(vmwgfx_drivers), $(DRM_GPU_DRIVERS)),)
+-LOCAL_SRC_FILES += $(LIBKMS_VMWGFX_FILES)
+-endif
+-
+-ifneq ($(filter $(intel_drivers), $(DRM_GPU_DRIVERS)),)
+-LOCAL_SRC_FILES += $(LIBKMS_INTEL_FILES)
+-endif
+-
+-ifneq ($(filter $(nouveau_drivers), $(DRM_GPU_DRIVERS)),)
+-LOCAL_SRC_FILES += $(LIBKMS_NOUVEAU_FILES)
+-endif
+-
+-ifneq ($(filter $(radeon_drivers), $(DRM_GPU_DRIVERS)),)
+-LOCAL_SRC_FILES += $(LIBKMS_RADEON_FILES)
+-endif
+-
+-LOCAL_MODULE := libkms
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/libkms/Android.sources.bp
+@@ -0,0 +1,50 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libkms_android_sources",
++    srcs: [
++        "linux.c",
++        "dumb.c",
++        "api.c",
++    ],
++}
++
++cc_defaults {
++    name: "libkms_android_vmwgfx_sources",
++    srcs: [
++        "vmwgfx.c",
++    ],
++}
++
++cc_defaults {
++    name: "libkms_android_intel_sources",
++    srcs: [
++        "intel.c",
++    ],
++}
++
++cc_defaults {
++    name: "libkms_android_nouveau_sources",
++    srcs: [
++        "nouveau.c",
++    ],
++}
++
++cc_defaults {
++    name: "libkms_android_radeon_sources",
++    srcs: [
++        "radeon.c",
++    ],
++}
+--- a/meson.build
++++ b/meson.build
+@@ -155,6 +155,8 @@
+ 
+ with_exynos = get_option('exynos') == 'true'
+ 
++with_vivante = get_option('vivante') == 'true'
++
+ with_vc4 = false
+ _vc4 = get_option('vc4')
+ if _vc4 != 'false'
+@@ -392,6 +394,9 @@
+ if with_etnaviv
+   subdir('etnaviv')
+ endif
++if with_vivante
++  subdir('vivante')
++endif
+ if with_man_pages
+   subdir('man')
+ endif
+@@ -413,4 +418,5 @@
+ message('  Tegra API      @0@'.format(with_tegra))
+ message('  VC4 API        @0@'.format(with_vc4))
+ message('  Etnaviv API    @0@'.format(with_etnaviv))
++message('  Vivante API    @0@'.format(with_vivante))
+ message('')
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -141,3 +141,10 @@
+   value : false,
+   description : 'Enable support for using udev instead of mknod.',
+ )
++option(
++  'vivante',
++  type : 'combo',
++  value : 'false',
++  choices : ['true', 'false', 'auto'],
++  description : '''Enable support for vivante's experimental API''',
++)
+--- /dev/null
++++ b/nouveau/Android.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_nouveau",
++    vendor: true,
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_nouveau_sources",
++    ],
++    shared_libs: ["libdrm_android"],
++}
+--- a/nouveau/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_NOUVEAU_FILES, LIBDRM_NOUVEAU_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_nouveau
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_NOUVEAU_FILES)
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/nouveau/Android.sources.bp
+@@ -0,0 +1,23 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_nouveau_sources",
++    srcs: [
++        "nouveau.c",
++        "pushbuf.c",
++        "bufctx.c",
++        "abi16.c",
++    ],
++}
+--- /dev/null
++++ b/omap/Android.bp
+@@ -0,0 +1,26 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_omap",
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_omap_sources",
++    ],
++    vendor: true,
++
++    shared_libs: ["libdrm_android"],
++}
+--- a/omap/Android.mk
++++ /dev/null
+@@ -1,13 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-LOCAL_MODULE := libdrm_omap
+-LOCAL_VENDOR_MODULE := true
+-
+-LOCAL_SRC_FILES := omap_drm.c
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-include $(LIBDRM_COMMON_MK)
+-
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/omap/Android.sources.bp
+@@ -0,0 +1,20 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_omap_sources",
++    srcs: [
++	"omap_drm.c",
++    ],
++}
+--- /dev/null
++++ b/radeon/Android.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_shared {
++    name: "libdrm_android_radeon",
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_radeon_sources",
++    ],
++    vendor: true,
++    shared_libs: ["libdrm_android"],
++}
+--- a/radeon/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-include $(CLEAR_VARS)
+-
+-# Import variables LIBDRM_RADEON_FILES, LIBDRM_RADEON_H_FILES
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_radeon
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(LIBDRM_RADEON_FILES)
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_SHARED_LIBRARY)
+--- /dev/null
++++ b/radeon/Android.sources.bp
+@@ -0,0 +1,25 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_radeon_sources",
++    srcs: [
++        "radeon_bo_gem.c",
++        "radeon_cs_gem.c",
++        "radeon_cs_space.c",
++        "radeon_bo.c",
++        "radeon_cs.c",
++        "radeon_surface.c",
++    ],
++}
+--- /dev/null
++++ b/tests/Android.bp
+@@ -0,0 +1,21 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++subdirs = ["*"]
++
++cc_library_headers {
++    name: "libdrm_android_test_headers",
++    export_include_dirs: ["."],
++    vendor: true,
++}
+--- a/tests/Android.mk
++++ /dev/null
+@@ -1 +0,0 @@
+-include $(call all-subdir-makefiles)
+--- /dev/null
++++ b/tests/modetest/Android.bp
+@@ -0,0 +1,27 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_test {
++    name: "modetest_android",
++    defaults: [
++        "libdrm_android_defaults",
++        "modetest_android_sources",
++    ],
++
++    vendor: true,
++    shared_libs: ["libdrm_android"],
++    static_libs: ["libdrm_android_util"],
++}
+--- a/tests/modetest/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-
+-include $(CLEAR_VARS)
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_SRC_FILES := $(MODETEST_FILES)
+-
+-LOCAL_MODULE := modetest
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-LOCAL_STATIC_LIBRARIES := libdrm_util
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_EXECUTABLE)
+--- /dev/null
++++ b/tests/modetest/Android.sources.bp
+@@ -0,0 +1,22 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "modetest_android_sources",
++    srcs: [
++        "buffers.c",
++        "cursor.c",
++        "modetest.c",
++    ],
++}
+--- /dev/null
++++ b/tests/proptest/Android.bp
+@@ -0,0 +1,22 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_test {
++    name: "proptest_android",
++    defaults: ["libdrm_android_defaults"],
++    srcs: ["proptest.c"],
++    shared_libs: ["libdrm_android"],
++    static_libs: ["libdrm_android_util"],
++    vendor: true,
++}
+--- a/tests/proptest/Android.mk
++++ /dev/null
+@@ -1,14 +0,0 @@
+-LOCAL_PATH := $(call my-dir)
+-
+-include $(CLEAR_VARS)
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_SRC_FILES := $(PROPTEST_FILES)
+-
+-LOCAL_MODULE := proptest
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-LOCAL_STATIC_LIBRARIES := libdrm_util
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_EXECUTABLE)
+--- /dev/null
++++ b/tests/util/Android.bp
+@@ -0,0 +1,27 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++build = ["Android.sources.bp"]
++
++cc_library_static {
++    name: "libdrm_android_util",
++    defaults: [
++        "libdrm_android_defaults",
++        "libdrm_android_util_sources",
++    ],
++    shared_libs: ["libdrm_android"],
++    header_libs: ["libdrm_android_test_headers"],
++    export_header_lib_headers: ["libdrm_android_test_headers"],
++    vendor: true,
++}
+--- a/tests/util/Android.mk
++++ /dev/null
+@@ -1,38 +0,0 @@
+-#
+-# Copyright © 2015 NVIDIA Corporation
+-#
+-# Permission is hereby granted, free of charge, to any person obtaining a
+-# copy of this software and associated documentation files (the "Software"),
+-# to deal in the Software without restriction, including without limitation
+-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+-# and/or sell copies of the Software, and to permit persons to whom the
+-# Software is furnished to do so, subject to the following conditions:
+-#
+-# The above copyright notice and this permission notice (including the next
+-# paragraph) shall be included in all copies or substantial portions of the
+-# Software.
+-#
+-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+-# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+-# IN THE SOFTWARE.
+-#
+-
+-LOCAL_PATH := $(call my-dir)
+-
+-include $(CLEAR_VARS)
+-include $(LOCAL_PATH)/Makefile.sources
+-
+-LOCAL_MODULE := libdrm_util
+-
+-LOCAL_SHARED_LIBRARIES := libdrm
+-
+-LOCAL_SRC_FILES := $(UTIL_FILES)
+-
+-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LIBDRM_TOP)/tests
+-
+-include $(LIBDRM_COMMON_MK)
+-include $(BUILD_STATIC_LIBRARY)
+--- /dev/null
++++ b/tests/util/Android.sources.bp
+@@ -0,0 +1,22 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_defaults {
++    name: "libdrm_android_util_sources",
++    srcs: [
++        "format.c",
++        "kms.c",
++        "pattern.c",
++    ],
++}
+--- /dev/null
++++ b/tests/vivante/Makefile.am
+@@ -0,0 +1,42 @@
++##############################################################################
++#
++#    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++#    All Rights Reserved.
++#
++#    Permission is hereby granted, free of charge, to any person obtaining
++#    a copy of this software and associated documentation files (the
++#    'Software'), to deal in the Software without restriction, including
++#    without limitation the rights to use, copy, modify, merge, publish,
++#    distribute, sub license, and/or sell copies of the Software, and to
++#    permit persons to whom the Software is furnished to do so, subject
++#    to the following conditions:
++#
++#    The above copyright notice and this permission notice (including the
++#    next paragraph) shall be included in all copies or substantial
++#    portions of the Software.
++#
++#    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++#    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++#
++##############################################################################
++AM_CFLAGS = \
++	-pthread \
++	$(WARN_CFLAGS) \
++	-I$(top_srcdir)/include/drm \
++	-I$(top_srcdir)/vivante \
++	-I$(top_srcdir)
++
++LDADD = \
++	../../vivante/libdrm_vivante.la \
++	../../libdrm.la \
++	-ldl
++
++TESTS = viv_bo_test
++
++bin_PROGRAMS = $(TESTS)
++
+--- /dev/null
++++ b/tests/vivante/viv_bo_test.c
+@@ -0,0 +1,157 @@
++/****************************************************************************
++*
++*    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++*    All Rights Reserved.
++*
++*    Permission is hereby granted, free of charge, to any person obtaining
++*    a copy of this software and associated documentation files (the
++*    'Software'), to deal in the Software without restriction, including
++*    without limitation the rights to use, copy, modify, merge, publish,
++*    distribute, sub license, and/or sell copies of the Software, and to
++*    permit persons to whom the Software is furnished to do so, subject
++*    to the following conditions:
++*
++*    The above copyright notice and this permission notice (including the
++*    next paragraph) shall be included in all copies or substantial
++*    portions of the Software.
++*
++*    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++*    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++*    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++*    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++*    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++*    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++*    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++*
++*****************************************************************************/
++
++
++/*
++ * Copyright © 2015 Canonical Ltd. (Maarten Lankhorst)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE COPYRIGHT HOLDER(S) OR AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR
++ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
++ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ * OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++#ifdef HAVE_CONFIG_H
++#  include "config.h"
++#endif
++
++#include <sys/ioctl.h>
++#include <dlfcn.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <errno.h>
++#include <pthread.h>
++
++#include "xf86drm.h"
++#include "vivante_bo.h"
++
++static int import_fd = -1;
++
++static void *
++openclose(void *dev)
++{
++    struct drm_vivante *drm = dev;
++    struct drm_vivante_bo *bo;
++    int i;
++
++    for (i = 0; i < 100000; ++i) {
++        if (!drm_vivante_bo_import_from_fd(drm, import_fd, &bo))
++            drm_vivante_bo_destroy(bo);
++    }
++    return NULL;
++}
++
++int main(int argc, char *argv[])
++{
++    drmVersionPtr version;
++    const char *device = NULL;
++    int err, fd1, fd2;
++    struct drm_vivante *drm1, *drm2;
++    struct drm_vivante_bo *bo;
++    pthread_t t1, t2;
++
++    if (argc < 2) {
++        fd1 = drmOpenWithType("vivante", NULL, DRM_NODE_RENDER);
++        if (fd1 >= 0)
++            fd2 = drmOpenWithType("vivante", NULL, DRM_NODE_RENDER);
++    } else {
++        device = argv[1];
++
++        fd1 = open(device, O_RDWR);
++        if (fd1 >= 0)
++            fd2 = open(device, O_RDWR);
++        else
++            fd2 = fd1 = -errno;
++    }
++
++    if (fd1 < 0) {
++        fprintf(stderr, "Opening 1st vivante render node failed with %i\n", fd1);
++        return device ? -fd1 : 77;
++    }
++
++    if (fd2 < 0) {
++        fprintf(stderr, "Opening 2nd vivante render node failed with %i\n", -errno);
++        return errno;
++    }
++
++    version = drmGetVersion(fd1);
++    if (version) {
++        printf("Version: %d.%d.%d\n", version->version_major,
++               version->version_minor, version->version_patchlevel);
++        printf("  Name: %s\n", version->name);
++        printf("  Date: %s\n", version->date);
++        printf("  Description: %s\n", version->desc);
++
++        drmFreeVersion(version);
++    }
++
++    err = drm_vivante_create(fd1, &drm1);
++    if (!err)
++        err = drm_vivante_create(fd2, &drm2);
++    if (err < 0)
++        return 1;
++
++    err = drm_vivante_bo_create(drm2, 0, 1920*1080*4, &bo);
++    if (!err)
++        err = drm_vivante_bo_export_to_fd(bo, &import_fd);
++
++    if (!err) {
++        pthread_create(&t1, NULL, openclose, (void*)drm1);
++        pthread_create(&t2, NULL, openclose, (void*)drm1);
++    }
++
++    pthread_join(t1, NULL);
++    pthread_join(t2, NULL);
++
++    drm_vivante_bo_destroy(bo);
++
++    drm_vivante_close(drm2);
++    drm_vivante_close(drm1);
++    if (device) {
++        close(fd2);
++        close(fd1);
++    } else {
++        drmClose(fd2);
++        drmClose(fd1);
++    }
++
++    return 0;
++}
+--- /dev/null
++++ b/vivante/Android.bp
+@@ -0,0 +1,22 @@
++// Copyright 2019 NXP
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++cc_library_shared {
++    name: "libdrm_vivante",
++    srcs: ["vivante_bo.c"],
++    cflags: ["-Wno-unused-parameter"],
++    include_dirs: ["vendor/nxp-opensource/libdrm-imx/include/drm"],
++    shared_libs: ["libdrm_android"],
++    vendor: true,
++}
+--- /dev/null
++++ b/vivante/Makefile.am
+@@ -0,0 +1,52 @@
++##############################################################################
++#
++#    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++#    All Rights Reserved.
++#
++#    Permission is hereby granted, free of charge, to any person obtaining
++#    a copy of this software and associated documentation files (the
++#    'Software'), to deal in the Software without restriction, including
++#    without limitation the rights to use, copy, modify, merge, publish,
++#    distribute, sub license, and/or sell copies of the Software, and to
++#    permit persons to whom the Software is furnished to do so, subject
++#    to the following conditions:
++#
++#    The above copyright notice and this permission notice (including the
++#    next paragraph) shall be included in all copies or substantial
++#    portions of the Software.
++#
++#    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++#    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++#
++##############################################################################
++
++
++AM_CPPFLAGS = \
++	-I$(top_srcdir) \
++	-I$(top_srcdir)/include/drm
++
++AM_CFLAGS = \
++	@PTHREADSTUBS_CFLAGS@ \
++	$(WARN_CFLAGS)
++
++libdrm_vivante_ladir = $(libdir)
++libdrm_vivante_la_LTLIBRARIES = libdrm_vivante.la
++libdrm_vivante_la_LDFLAGS = -version-number 1:0:0 -no-undefined
++libdrm_vivante_la_LIBADD = ../libdrm.la @PTHREADSTUBS_LIBS@
++
++libdrm_vivante_la_SOURCES = \
++	vivante_bo.c
++
++libdrm_vivanteincludedir = ${includedir}/libdrm
++libdrm_vivanteinclude_HEADERS = vivante_bo.h
++
++pkgconfigdir = @pkgconfigdir@
++pkgconfig_DATA = libdrm_vivante.pc
++
++TESTS = vivante-symbol-check
++EXTRA_DIST = $(TESTS)
+--- /dev/null
++++ b/vivante/libdrm_vivante.pc
+@@ -0,0 +1,11 @@
++prefix=/usr
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
++includedir=${prefix}/include
++
++Name: libdrm_vivante
++Description: Userspace interface to Vivante kernel DRM services
++Version: 2.4.84
++Libs: -L${libdir} -ldrm_vivante
++Cflags: -I${includedir} -I${includedir}/libdrm
++Requires.private: libdrm
+--- /dev/null
++++ b/vivante/libdrm_vivante.pc.in
+@@ -0,0 +1,11 @@
++prefix=@prefix@
++exec_prefix=@exec_prefix@
++libdir=@libdir@
++includedir=@includedir@
++
++Name: libdrm_vivante
++Description: Userspace interface to Vivante kernel DRM services
++Version: @PACKAGE_VERSION@
++Libs: -L${libdir} -ldrm_vivante
++Cflags: -I${includedir} -I${includedir}/libdrm
++Requires.private: libdrm
+--- /dev/null
++++ b/vivante/meson.build
+@@ -0,0 +1,57 @@
++# Copyright © 2017-2018 Intel Corporation
++# Copyright © 2019 Josua Mayer <josua@solid-run.com>
++
++# Permission is hereby granted, free of charge, to any person obtaining a copy
++# of this software and associated documentation files (the "Software"), to deal
++# in the Software without restriction, including without limitation the rights
++# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++# copies of the Software, and to permit persons to whom the Software is
++# furnished to do so, subject to the following conditions:
++
++# The above copyright notice and this permission notice shall be included in
++# all copies or substantial portions of the Software.
++
++# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++# SOFTWARE.
++
++libdrm_vivante = shared_library(
++  'drm_vivante',
++  [files('vivante_bo.c'), config_file],
++  include_directories : [inc_root, inc_drm],
++  link_with : libdrm,
++  c_args : libdrm_c_args,
++  dependencies : [dep_pthread_stubs],
++  version : '1.0.0',
++  install : true,
++)
++
++install_headers('vivante_bo.h', subdir : 'libdrm')
++
++ext_libdrm_exynos = declare_dependency(
++  link_with : [libdrm, libdrm_vivante],
++  include_directories : [inc_drm, include_directories('.')],
++)
++
++pkg.generate(
++  name : 'libdrm_vivante',
++  libraries : libdrm_vivante,
++  subdirs : ['.', 'libdrm'],
++  version : meson.project_version(),
++  requires_private : 'libdrm',
++  description : 'Userspace interface to Vivante kernel DRM services',
++)
++
++test(
++  'vivante-symbol-check',
++  symbols_check,
++  args : [
++    '--lib', libdrm_vivante,
++    '--symbols-file', files('vivante-symbols.txt'),
++    '--nm', prog_nm.path(),
++  ],
++)
+--- /dev/null
++++ b/vivante/vivante_bo.c
+@@ -0,0 +1,565 @@
++/****************************************************************************
++*
++*    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++*    All Rights Reserved.
++*
++*    Permission is hereby granted, free of charge, to any person obtaining
++*    a copy of this software and associated documentation files (the
++*    'Software'), to deal in the Software without restriction, including
++*    without limitation the rights to use, copy, modify, merge, publish,
++*    distribute, sub license, and/or sell copies of the Software, and to
++*    permit persons to whom the Software is furnished to do so, subject
++*    to the following conditions:
++*
++*    The above copyright notice and this permission notice (including the
++*    next paragraph) shall be included in all copies or substantial
++*    portions of the Software.
++*
++*    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++*    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++*    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++*    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++*    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++*    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++*    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++*
++*****************************************************************************/
++
++
++#ifdef HAVE_CONFIG_H
++#  include "config.h"
++#endif
++
++#include <errno.h>
++#include <fcntl.h>
++#include <string.h>
++#include <unistd.h>
++#include <pthread.h>
++
++#include <sys/mman.h>
++
++#include <xf86drm.h>
++
++#include <vivante_drm.h>
++
++#include "vivante_bo.h"
++
++struct drm_vivante
++{
++    /* driver fd. */
++    int fd;
++
++    struct drm_vivante_bo *bo_list;
++    pthread_mutex_t mutex;
++};
++
++struct drm_vivante_bo
++{
++    struct drm_vivante *drm;
++
++    uint32_t handle;
++
++    /* export prime fd if any */
++    int fd;
++
++    uint32_t flags;
++    uint32_t size;
++
++    void *vaddr;
++
++    int refcount;
++    struct drm_vivante_bo *next;
++};
++
++
++int drm_vivante_create(int fd, struct drm_vivante **drmp)
++{
++    int supported = 0;
++    drmVersionPtr version;
++    struct drm_vivante *drm;
++
++    version = drmGetVersion(fd);
++    if (!version)
++        return -ENOMEM;
++
++    if (!strncmp(version->name, "vivante", version->name_len))
++        supported = 1;
++
++    drmFreeVersion(version);
++
++    if (!supported)
++        return -ENOTSUP;
++
++    drm = calloc(1, sizeof(struct drm_vivante));
++    if (!drm)
++        return -ENOMEM;
++
++    drm->fd = fd;
++    drm->bo_list = NULL;
++    pthread_mutex_init(&drm->mutex, NULL);
++
++    *drmp = drm;
++    return 0;
++}
++
++void drm_vivante_close(struct drm_vivante *drm)
++{
++    free(drm);
++}
++
++static inline void drm_vivante_bo_add_locked(struct drm_vivante *drm,
++                    struct drm_vivante_bo *bo)
++{
++    bo->refcount = 1;
++    bo->next = drm->bo_list;
++    drm->bo_list = bo;
++}
++
++static void drm_vivante_bo_add(struct drm_vivante *drm,
++                    struct drm_vivante_bo *bo)
++{
++    pthread_mutex_lock(&drm->mutex);
++    drm_vivante_bo_add_locked(drm, bo);
++    pthread_mutex_unlock(&drm->mutex);
++}
++
++static struct drm_vivante_bo *drm_vivante_bo_lookup(
++                    struct drm_vivante *drm, uint32_t handle)
++{
++    struct drm_vivante_bo *bo;
++    int err;
++
++    for (bo = drm->bo_list; bo != NULL; bo = bo->next) {
++        if (bo->handle == handle)
++            break;
++    }
++    if (bo)
++        bo->refcount++;
++    return bo;
++}
++
++/* returns refcount. */
++static int drm_vivante_bo_decref(struct drm_vivante *drm,
++                struct drm_vivante_bo *bo)
++{
++    int ret;
++
++    pthread_mutex_lock(&drm->mutex);
++    ret = --bo->refcount;
++
++    if (ret > 0)
++        goto out;
++
++    /* unlink bo. */
++    if (bo == drm->bo_list)
++        drm->bo_list = bo->next;
++    else {
++        struct drm_vivante_bo *prev = NULL;
++        for (prev = drm->bo_list; prev != NULL; prev = prev->next) {
++            if (prev->next == bo) {
++                prev->next = bo->next;
++                break;
++            }
++        }
++    }
++
++out:
++    pthread_mutex_unlock(&drm->mutex);
++    return ret;
++}
++
++static int drm_vivante_bo_init(struct drm_vivante *drm,
++                struct drm_vivante_bo **bop)
++{
++    struct drm_vivante_bo *bo;
++
++    bo = calloc(1, sizeof(*bo));
++    if (!bo)
++        return -ENOMEM;
++
++    bo->drm = drm;
++    bo->fd = -1;
++    bo->vaddr = NULL;
++
++    *bop = bo;
++    return 0;
++}
++
++int drm_vivante_bo_create(struct drm_vivante *drm,
++            uint32_t flags, uint32_t size, struct drm_vivante_bo **bop)
++{
++    int err = 0;
++    struct drm_vivante_bo *bo;
++    struct drm_viv_gem_create args = {
++        .flags = flags,
++        .size  = size
++    };
++
++    if (size == 0)
++        return -EINVAL;
++
++    if (!drm || !bop)
++        return -EINVAL;
++
++    err = drm_vivante_bo_init(drm, &bo);
++    if (err) {
++        return err;
++    }
++
++    if (drmIoctl(drm->fd, DRM_IOCTL_VIV_GEM_CREATE, &args)) {
++        free(bo);
++        return -errno;
++    }
++    bo->handle = args.handle;
++    bo->flags = flags;
++    bo->size = size;
++
++    drm_vivante_bo_add(drm, bo);
++    *bop = bo;
++    return 0;
++}
++
++int drm_vivante_bo_create_with_ts(struct drm_vivante *drm,
++            uint32_t flags, uint32_t size, struct drm_vivante_bo **bop)
++{
++    int err = 0;
++    uint32_t ts_handle = 0;
++    struct drm_vivante_bo *bo;
++    struct drm_viv_gem_create args = {
++        .flags = flags,
++        .size  = size
++    };
++    struct drm_gem_close close_args;
++    struct drm_viv_gem_attach_aux aux_args;
++    const uint32_t valid_ts_flags = DRM_VIV_GEM_CONTIGUOUS |
++                        DRM_VIV_GEM_SECURE | DRM_VIV_GEM_CMA_LIMIT;
++
++    if (size == 0)
++        return -EINVAL;
++
++    if (!drm || !bop)
++        return -EINVAL;
++
++    err = drm_vivante_bo_init(drm, &bo);
++    if (err)
++        return err;
++
++    if (drmIoctl(drm->fd, DRM_IOCTL_VIV_GEM_CREATE, &args)) {
++        err = -errno;
++        goto err_close;
++    }
++    bo->handle = args.handle;
++
++    /* alloc ts handle, size is master buffer size / 256, align up to 64B. */
++    args.flags = flags & valid_ts_flags;
++    args.size  = ((size >> 8) + 0x3f) & ~0x3f;
++    if (drmIoctl(drm->fd, DRM_IOCTL_VIV_GEM_CREATE, &args)) {
++        err = -errno;
++        goto err_close;
++    }
++    ts_handle = args.handle;
++
++    /* ref ts_handle in master handle. */
++    aux_args.handle = bo->handle;
++    aux_args.ts_handle = ts_handle;
++    if (drmIoctl(drm->fd, DRM_IOCTL_VIV_GEM_ATTACH_AUX, &aux_args)) {
++        err = -errno;
++        goto err_close;
++    }
++
++    /* Now ts was attached to master, destroy it now. */
++    close_args.handle = ts_handle;
++    if (drmIoctl(drm->fd, DRM_IOCTL_GEM_CLOSE, &close_args)) {
++        err = -errno;
++        goto err_close;
++    }
++    ts_handle = 0;
++
++    bo->flags = flags;
++    bo->size = size;
++
++    drm_vivante_bo_add(drm, bo);
++    *bop = bo;
++    return 0;
++
++err_close:
++    if (bo->handle) {
++
++        if (ts_handle) {
++            close_args.handle = ts_handle;
++            drmIoctl(drm->fd, DRM_IOCTL_GEM_CLOSE, &close_args);
++        }
++
++        close_args.handle = bo->handle;
++        drmIoctl(drm->fd, DRM_IOCTL_GEM_CLOSE, &close_args);
++    }
++
++    free(bo);
++    return err;
++}
++
++int drm_vivante_bo_export_to_fd(struct drm_vivante_bo *bo, int *pfd)
++{
++    if (!bo || !pfd)
++        return -EINVAL;
++
++    if (bo->fd < 0) {
++        int fd;
++        if (drmPrimeHandleToFD(bo->drm->fd, bo->handle, O_RDWR, &fd))
++            return -errno;
++        bo->fd = fd;
++    }
++
++    *pfd = bo->fd;
++    return 0;
++}
++
++int drm_vivante_bo_import_from_fd(struct drm_vivante *drm, int fd,
++            struct drm_vivante_bo **bop)
++{
++    int err;
++    uint64_t size;
++    uint32_t handle = 0;
++    struct drm_vivante_bo *bo = NULL;
++
++    if (!drm || !bop || fd < 0)
++        return -EINVAL;
++
++    pthread_mutex_lock(&drm->mutex);
++
++    if (drmPrimeFDToHandle(drm->fd, fd, &handle)) {
++        err = -errno;
++        goto err_close;
++    }
++
++    bo = drm_vivante_bo_lookup(drm, handle);
++    if (bo) {
++        pthread_mutex_unlock(&drm->mutex);
++        *bop = bo;
++        return 0;
++    }
++
++    err = drm_vivante_bo_init(drm, &bo);
++    if (err)
++        goto err_close;
++    bo->handle = handle;
++
++    err = drm_vivante_bo_query(bo, DRM_VIV_GEM_PARAM_SIZE, &size);
++    if (err)
++        goto err_close;
++    bo->size = (uint32_t)size;
++
++    drm_vivante_bo_add_locked(drm, bo);
++    pthread_mutex_unlock(&drm->mutex);
++
++    *bop = bo;
++    return 0;
++
++err_close:
++    pthread_mutex_unlock(&drm->mutex);
++
++    if (handle > 0) {
++        struct drm_gem_close close_args = {
++            .handle = handle,
++        };
++        drmIoctl(drm->fd, DRM_IOCTL_GEM_CLOSE, &close_args);
++    }
++    free(bo);
++
++    return err;
++}
++
++void drm_vivante_bo_destroy(struct drm_vivante_bo *bo)
++{
++    struct drm_gem_close close_args;
++
++    if (!bo)
++        return;
++
++    if (drm_vivante_bo_decref(bo->drm, bo) != 0)
++        return;
++
++    if (bo->vaddr) {
++        drm_vivante_bo_munmap(bo);
++    }
++
++    close_args.handle = bo->handle;
++    drmIoctl(bo->drm->fd, DRM_IOCTL_GEM_CLOSE, &close_args);
++
++    free(bo);
++}
++
++int drm_vivante_bo_get_handle(struct drm_vivante_bo *bo, uint32_t *handle)
++{
++    if (!bo || !handle)
++        return -EINVAL;
++
++    *handle = bo->handle;
++    return 0;
++}
++
++static int clean_bo_cache(struct drm_vivante_bo *bo)
++{
++    struct drm_viv_gem_cache args = {
++        .op = DRM_VIV_GEM_CLEAN_CACHE,
++        .handle = bo->handle,
++        .logical = (uint64_t)(uintptr_t)bo->vaddr,
++        .bytes = bo->size
++    };
++
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_CACHE, &args))
++        return -errno;
++
++    return 0;
++}
++
++
++int drm_vivante_bo_mmap(struct drm_vivante_bo *bo, void **vaddr)
++{
++    struct drm_viv_gem_lock args;
++
++    if (!bo || !vaddr)
++        return -EINVAL;
++
++    /* already locked */
++    if (bo->vaddr)
++        return -EPERM;
++        
++    args.handle = bo->handle;
++    args.cacheable = (bo->flags & DRM_VIV_GEM_CACHED) ? 1 : 0;
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_LOCK, &args))
++        return -errno;
++
++    bo->vaddr = (void *)(uintptr_t)args.logical;
++
++    *vaddr = bo->vaddr;
++    return 0;
++}
++
++int drm_vivante_bo_munmap(struct drm_vivante_bo *bo)
++{
++    struct drm_viv_gem_unlock args;
++
++    if (!bo || !bo->vaddr)
++        return -EINVAL;
++
++    args.handle = bo->handle;
++    if (bo->flags & DRM_VIV_GEM_CACHED) {
++        int err = clean_bo_cache(bo);
++        if (err)
++            return err;
++    }
++
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_UNLOCK, &args))
++        return -errno;
++
++    bo->vaddr = NULL;
++    return 0;
++}
++
++int drm_vivante_bo_query(struct drm_vivante_bo *bo,
++            uint32_t param, uint64_t *value)
++{
++    struct drm_viv_gem_query args = {
++        .param = param,
++    };
++
++    if (!bo || !value)
++        return -EINVAL;
++
++    args.handle = bo->handle;
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_QUERY, &args))
++        return -errno;
++
++    *value = args.value;
++    return 0;
++}
++
++int drm_vivante_bo_set_tiling(struct drm_vivante_bo *bo,
++            const struct drm_vivante_bo_tiling *tiling)
++{
++    struct drm_viv_gem_set_tiling args;
++
++    if (!bo || !tiling)
++        return -EINVAL;
++
++    args = (struct drm_viv_gem_set_tiling) {
++        .handle = bo->handle,
++        .tiling_mode = tiling->tiling_mode,
++        .ts_mode = tiling->ts_mode,
++        .clear_value = tiling->clear_value,
++    };
++
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_SET_TILING, &args))
++        return -errno;
++
++    return 0;
++}
++
++int drm_vivante_bo_get_tiling(struct drm_vivante_bo *bo,
++            struct drm_vivante_bo_tiling *tiling)
++{
++    struct drm_viv_gem_get_tiling args;
++
++    if (!bo || !tiling)
++        return -EINVAL;
++
++    args.handle = bo->handle;
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_GET_TILING, &args))
++        return -errno;
++
++    tiling->tiling_mode = args.tiling_mode;
++    tiling->ts_mode = args.ts_mode;
++    tiling->clear_value = args.clear_value;
++
++    return 0;
++}
++
++static inline int inc_bo_timestamp(struct drm_vivante_bo *bo,
++                        uint32_t inc, uint64_t *timestamp)
++{
++    struct drm_viv_gem_timestamp args = {
++        .handle = bo->handle,
++        .inc = inc,
++    };
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_TIMESTAMP, &args))
++        return -errno;
++
++    if (timestamp)
++        *timestamp = args.timestamp;
++    return 0;
++}
++
++int drm_vivante_bo_inc_timestamp(struct drm_vivante_bo *bo,
++            uint64_t *timestamp)
++{
++    if (!bo)
++        return -EINVAL;
++    return inc_bo_timestamp(bo, 1, timestamp);
++}
++
++int drm_vivante_bo_get_timestamp(struct drm_vivante_bo *bo,
++            uint64_t *timestamp)
++{
++    if (!bo || !timestamp)
++        return -EINVAL;
++    return inc_bo_timestamp(bo, 0, timestamp);
++}
++
++int drm_vivante_bo_ref_node(struct drm_vivante_bo *bo,
++            uint32_t *node, uint32_t *ts_node)
++{
++    struct drm_viv_gem_ref_node args;
++
++    if (!bo || !node || !ts_node)
++        return -EINVAL;
++
++    args.handle = bo->handle;
++    if (drmIoctl(bo->drm->fd, DRM_IOCTL_VIV_GEM_REF_NODE, &args))
++        return -errno;
++
++    *node = args.node;
++    *ts_node = args.ts_node;
++    return 0;
++}
++
+--- /dev/null
++++ b/vivante/vivante_bo.h
+@@ -0,0 +1,95 @@
++/****************************************************************************
++*
++*    Copyright 2012 - 2017 Vivante Corporation, Santa Clara, California.
++*    All Rights Reserved.
++*
++*    Permission is hereby granted, free of charge, to any person obtaining
++*    a copy of this software and associated documentation files (the
++*    'Software'), to deal in the Software without restriction, including
++*    without limitation the rights to use, copy, modify, merge, publish,
++*    distribute, sub license, and/or sell copies of the Software, and to
++*    permit persons to whom the Software is furnished to do so, subject
++*    to the following conditions:
++*
++*    The above copyright notice and this permission notice (including the
++*    next paragraph) shall be included in all copies or substantial
++*    portions of the Software.
++*
++*    THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
++*    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++*    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
++*    IN NO EVENT SHALL VIVANTE AND/OR ITS SUPPLIERS BE LIABLE FOR ANY
++*    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
++*    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
++*    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++*
++*****************************************************************************/
++
++
++#ifndef __DRM_VIVANTE_H__
++#define __DRM_VIVANTE_H__
++
++#include <stdint.h>
++#include <stdlib.h>
++#include <vivante_drm.h>
++
++#if defined(__cplusplus)
++extern "C" {
++#endif
++
++struct drm_vivante_bo;
++struct drm_vivante;
++
++struct drm_vivante_bo_tiling {
++    uint32_t tiling_mode;
++    uint32_t ts_mode;
++    uint64_t clear_value;
++};
++
++/* caller owns the driver fd. */
++int drm_vivante_create(int fd, struct drm_vivante **drmp);
++void drm_vivante_close(struct drm_vivante *drm);
++
++int drm_vivante_bo_create(struct drm_vivante *drm,
++            uint32_t flags, uint32_t size, struct drm_vivante_bo **bop);
++
++/* create bo with auxillary tile-status bo. */
++int drm_vivante_bo_create_with_ts(struct drm_vivante *drm,
++            uint32_t flags, uint32_t size, struct drm_vivante_bo **bop);
++
++/* caller owns the fd. */
++int drm_vivante_bo_export_to_fd(struct drm_vivante_bo *bo, int *pfd);
++/* caller still owns the fd upon return. */
++int drm_vivante_bo_import_from_fd(struct drm_vivante *drm, int fd,
++        struct drm_vivante_bo **bop);
++
++void drm_vivante_bo_destroy(struct drm_vivante_bo *bo);
++
++/* do not close the handle directly. */
++int drm_vivante_bo_get_handle(struct drm_vivante_bo *bo, uint32_t *handle);
++
++int drm_vivante_bo_mmap(struct drm_vivante_bo *bo, void **vaddr);
++int drm_vivante_bo_munmap(struct drm_vivante_bo *bo);
++
++int drm_vivante_bo_query(struct drm_vivante_bo *bo,
++            uint32_t param, uint64_t *value);
++
++int drm_vivante_bo_set_tiling(struct drm_vivante_bo *bo,
++            const struct drm_vivante_bo_tiling *tiling);
++int drm_vivante_bo_get_tiling(struct drm_vivante_bo *bo,
++            struct drm_vivante_bo_tiling *tiling);
++
++/* output inc'ed timestamp, optional. */
++int drm_vivante_bo_inc_timestamp(struct drm_vivante_bo *bo,
++            uint64_t *timestamp);
++int drm_vivante_bo_get_timestamp(struct drm_vivante_bo *bo,
++            uint64_t *timestamp);
++
++int drm_vivante_bo_ref_node(struct drm_vivante_bo *bo,
++            uint32_t *node, uint32_t *ts_node);
++
++#if defined(__cplusplus)
++}
++#endif
++
++#endif /* __DRM_VIVANTE_H__ */
+--- a/xf86drm.h
++++ b/xf86drm.h
+@@ -504,6 +504,23 @@
+                : "cc","memory");                       \
+        } while (0)
+ 
++#elif defined(__arm__)
++       #undef DRM_DEV_MODE
++       #define DRM_DEV_MODE     (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
++
++       #define DRM_CAS(lock,old,new,__ret)             \
++       do {                                            \
++               __asm__ __volatile__ (                  \
++                       "1: ldrex %0, [%1]\n"           \
++                       "   teq %0, %2\n"               \
++                       "   ite eq\n"                   \
++                       "   strexeq %0, %3, [%1]\n"     \
++                       "   movne   %0, #1\n"           \
++               : "=&r" (__ret)                         \
++               : "r" (lock), "r" (old), "r" (new)      \
++               : "cc","memory");                       \
++       } while (0)
++
+ #endif /* architecture */
+ #endif /* __GNUC__ >= 2 */
+ 
+--- /dev/null
++++ b/vivante/vivante-symbols.txt
+@@ -0,0 +1,14 @@
++drm_vivante_bo_create
++drm_vivante_bo_create_with_ts
++drm_vivante_bo_export_to_fd
++drm_vivante_bo_import_from_fd
++drm_vivante_bo_destroy
++drm_vivante_bo_get_handle
++drm_vivante_bo_mmap
++drm_vivante_bo_munmap
++drm_vivante_bo_query
++drm_vivante_bo_set_tiling
++drm_vivante_bo_get_tiling
++drm_vivante_bo_inc_timestamp
++drm_vivante_bo_get_timestamp
++drm_vivante_bo_ref_node
