@@ -141,3 +141,10 @@ option(
   value : false,
   description : 'Enable support for using udev instead of mknod.',
 )
+option(
+  'vivante',
+  type : 'combo',
+  value : 'false',
+  choices : ['true', 'false', 'auto'],
+  description : '''Enable support for vivante's experimental API''',
+)

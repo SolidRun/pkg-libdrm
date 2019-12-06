@@ -151,6 +151,8 @@ endif
 
 with_exynos = get_option('exynos') == 'true'
 
+with_vivante = get_option('vivante') == 'true'
+
 with_vc4 = false
 _vc4 = get_option('vc4')
 if _vc4 != 'false'
@@ -317,6 +319,7 @@ install_headers(
   'include/drm/savage_drm.h', 'include/drm/sis_drm.h',
   'include/drm/tegra_drm.h', 'include/drm/vc4_drm.h',
   'include/drm/via_drm.h', 'include/drm/virtgpu_drm.h',
+  'include/drm/vivante_drm.h',
   subdir : 'libdrm',
 )
 if with_vmwgfx
@@ -367,6 +370,9 @@ endif
 if with_etnaviv
   subdir('etnaviv')
 endif
+if with_vivante
+  subdir('vivante')
+endif
 if with_man_pages
   subdir('man')
 endif
@@ -388,4 +394,5 @@ message('  Freedreno API  @0@ (kgsl: @1@)'.format(with_freedreno, with_freedreno
 message('  Tegra API      @0@'.format(with_tegra))
 message('  VC4 API        @0@'.format(with_vc4))
 message('  Etnaviv API    @0@'.format(with_etnaviv))
+message('  Vivante API    @0@'.format(with_vivante))
 message('')
