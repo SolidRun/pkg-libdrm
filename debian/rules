@@ -83,6 +83,16 @@ else
 	confflags += -Dfreedreno=false
 endif
 
+# Vivante is on arm and arm64
+ifneq (,$(filter arm arm64,$(DEB_HOST_ARCH_CPU)))
+	VIVANTE = yes
+endif
+ifeq ($(VIVANTE), yes)
+	confflags += -Dvivante=true
+else
+	confflags += -Dvivante=false
+endif
+
 ###
 ### Actual build
 ###
@@ -133,6 +143,9 @@ ifeq ($(TEGRA), yes)
 endif
 ifeq ($(FREEDRENO), yes)
 	dh_makeshlibs -plibdrm-freedreno1 -V'libdrm-freedreno1 (>= 2.4.97)' -- -c4
+endif
+ifeq ($(VIVANTE), yes)
+	dh_makeshlibs -plibdrm-vivante1 -V'libdrm-vivante1' -- -c4
 endif
 
 %:
